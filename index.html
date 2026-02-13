@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Valentine ❤️</title>
+    <style>
+        :root { --romantic-red: #ff4d6d; --soft-pink: #fff0f3; --dark-red: #c9184a; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--soft-pink); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            overflow: hidden; /* Prevents scrollbars from floating hearts */
+        }
+
+        /* --- HEART ANIMATION CSS --- */
+        .heart {
+            position: absolute;
+            color: rgba(255, 77, 109, 0.4);
+            font-size: 20px;
+            user-select: none;
+            pointer-events: none;
+            animation: float Up 6s linear infinite;
+            bottom: -50px;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- UI STYLING --- */
+        #password-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--romantic-red); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; transition: 0.8s ease-in-out; }
+        #password-overlay.unlocked { transform: translateY(-100%); }
+        
+        .container { 
+            position: relative;
+            z-index: 10;
+            max-width: 450px; 
+            width: 90%; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(5px);
+            padding: 25px; 
+            border-radius: 25px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            text-align: center;
+        }
+
+        .section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .hidden { display: none; }
+        h1 { color: var(--dark-red); margin-bottom: 10px; }
+        #countdown { font-size: 1.8em; font-weight: bold; color: var(--romantic-red); }
+        
+        input { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 85%; margin-bottom: 15px; text-align: center; }
+        button { background: var(--romantic-red); color: white; border: none; padding: 12px 30px; border-radius: 50px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        button:hover { background: var(--dark-red); transform: translateY(-2px); }
+
+        .photo-slot { width: 100%; height: 250px; background: #fdfdfd; border-radius: 15px; margin-top: 15px; overflow: hidden; border: 2px dashed var(--romantic-red); }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <!-- HEART CONTAINER FOR ANIMATION -->
+    <div id="heart-bg"></div>
+
+    <!-- PASSWORD OVERLAY -->
+    <div id="password-overlay">
+        <div style="background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 style="color:var(--dark-red)">Wait! Who is this?</h2>
+            <p>Enter our secret code to enter:</p>
+            <input type="password" id="secret-input" placeholder="Hint: How do we know each other?">
+            <button onclick="unlockApp()">Unlock My Heart ❤️</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="container">
+        <h1>For My Buji Thangam</h1>
+
+        <!-- PHASE 1: PRE-VALENTINE -->
+        <div id="phase1" class="section">
+            <h3>Counting down to Valentine's...</h3>
+            <div id="countdown">00:00:00</div>
+            <p style="font-size: 0.9em; color: #777;">A special surprise unlocks on Feb 14th!</p>
+        </div>
+
+        <!-- PHASE 2 & 3: POST-VALENTINE (Shown after Feb 14) -->
+        <div id="phase23" class="hidden">
+            <div class="section">
+                <h3>Our Journey Together</h3>
+                <p>We meet in: <span id="meet-days" style="color:var(--romantic-red); font-weight:bold;">--</span> days!</p>
+                <p>Current distance: <span id="distance" style="font-weight:bold;">0</span> km</p>
+            </div>
+
+            <div class="section">
+                <h3 id="quiz-title">Daily Memory Challenge</h3>
+                <div id="quiz-box">
+                    <p id="question">What was the first thing I ever said to you?</p>
+                    <input type="text" id="daily-answer" placeholder="Your answer...">
+                    <button onclick="checkDailyAnswer()">Check Memory</button>
+                </div>
+                <div id="reward" class="hidden">
+                    <p id="reward-msg" style="color: var(--dark-red); font-weight: bold;"></p>
+                    <div class="photo-slot"><img id="reward-img" src="" alt="Our Memory"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- SETTINGS ---
+    const SECRET_KEY = "sound"; // Update this
+    const VALENTINE_DATE = new Date("2026-02-14T00:00:00");
+    const MEET_DATE = new Date("2026-03-14T10:00:00"); // 30 days from now
+    const MY_LOC = { lat: 43.658264, lon: -79.597346 }; // NYC
+    const HER_LOC = { lat: 11.1125446, lon: 76.9313533 }; // LA
+
+    // Daily Questions (Key is the day of February 2026)
+    const dailyData = {
+        14: { q: "What color was my shirt when we first met?", a: "blue", msg: "Its quite easy. Happy Valentine's Day Thangam! You're my world.", src: "14.jpg" },
+        15: { q: "Where was our first Selfi taken.In a short form?", a: "skt", msg: "You are the one who trusted me the most. You are my heart beat.", img: "15.jpg" },
+		16: { q: "What was the juice shop name, we had our first juice?", a: "priya", msg: "I wont have got your love if i havent waitied till 32.", img: "16.jpg" },
+		17: { q: "Our engagement date?", a: "15032021", msg: "The day you became my other half", img: "17.jpg" },
+		18: { q: "Guess what I do like in you the most? Ha ha guess it", a: "love", msg: "You love me the most papa.", img: "18.jpg" },
+		19: { q: "What do you cal me, most of the time?", a: "ammu", msg: "Dont look at me like that.", img: "19.jpg" },
+		20: { q: "My first gift to you", a: "dollar", msg: "Do you remeber this day?", img: "20.jpg" },
+		21: { q: "What was name that I call you the most?", a: "thangam", msg: "Trying to find out what s in your heart.", img: "21.jpg" },
+		22: { q: "What we did, to get caught with the police fist time?", a: "kiss", msg: "Ha ha! Ummaaaaa", img: "22.jpg" },
+		23: { q: "The day we married you had something within you other than me. What is that something?", a: "corona", msg: "You married corona before me!!!!!", img: "23.jpg" },
+		24: { q: "What day I came to your home after marrige. Our fisrt night .", a: "sunday", msg: "Love u papa", img: "24.jpg" },
+		25: { q: "Call Lavu. Get the answer from her.", a: "9952178456", msg: "Now, You remeber who took this photo?", img: "25.jpg" },
+		26: { q: "You have to convince me for the answer.", a: "priya", msg: "Huggy papa", img: "26.jpg" },
+		27: { q: "There is a bug in the app. Please contact the developer.", a: "fiserv", msg: "Haha. I am a poor developer.", img: "27.jpg" },
+		28: { q: "Call me and say I dont want a new home. To get the answer", a: "home", msg: "Happy Valentine's Day! You're my world.", img: "28.jpg" },
+		01: { q: "Do you remeber the our car color. So easy.", a: "nexablue", msg: "We roamed most in this vehicle.", img: "01.jpg" },
+		02: { q: "You do mob the home today. And ask mom. She will give you the answer.", a: "temple", msg: "Great job papa. Home looks clean. Love you so much.", img: "02.jpg" },
+		03: { q: "Where did we go our fist trip in car?", a: "kanyakumari", msg: "First trip in car to the southern tip", img: "03.jpg" },
+		04: { q: "Do you think I can carry you? Yes or No", a: "yes", msg: "I always carry you in me papa.", img: "04.jpg" },
+		05: { q: "I am out of question papa. So type - I", a: "i", msg: "Happy Valentine's Day! You're my world.", img: "05.jpg" },
+		06: { q: "I am out of question papa. So type - love", a: "love", msg: "Happy Valentine's Day! You're my world.", img: "06.jpg" },
+		07: { q: "I am out of question papa. So type - you", a: "you", msg: "Happy Valentine's Day! You're my world.", img: "07.jpg" },
+		08: { q: "Now do you remeber what did you typed last 3 days? Guess what is next?", a: "papa", msg: "Happy Valentine's Day! You're my world.", img: "08.jpg" },
+		09: { q: "How many days left to meet?", a: "5", msg: "5 more days", img: "09.jpg" },
+		10: { q: "How many days left to meet?", a: "4", msg: "4 more to go", img: "10.jpg" },
+		11: { q: "How many days left to meet?", a: "3", msg: "3 more", img: "11.jpg" },
+		12: { q: "How many days left to meet?", a: "2", msg: "Going to meet you soon. I am starting today. Love u papa", img: "12.jpg" },
+		13: { q: "Kutty Kunjai?", a: "prisha", msg: "You, Ktty Kunjali's are my world. I always love you both. Always no matter what.", img: "12.jpg" }
+    };
+
+    // --- HEART ANIMATION GENERATOR ---
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.classList.add('heart');
+        heart.innerHTML = '❤️';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        heart.style.opacity = Math.random();
+        document.getElementById('heart-bg').appendChild(heart);
+        setTimeout(() => heart.remove(), 6000);
+    }
+    setInterval(createHeart, 3);
+
+    // --- LOGIC ---
+    function unlockApp() {
+        if (document.getElementById('secret-input').value.toLowerCase().trim() === SECRET_KEY) {
+            document.getElementById('password-overlay').classList.add('unlocked');
+            localStorage.setItem('val_unlocked', 'true');
+            initApp();
+        } else { alert("Try again, my love! ❤️"); }
+    }
+
+    function initApp() {
+        const now = new Date();
+        const p1 = document.getElementById('phase1');
+        const p23 = document.getElementById('phase23');
+
+        // Logic to swap sections
+        if (now >= VALENTINE_DATE) {
+            p1.classList.add('hidden');
+            p23.classList.remove('hidden');
+        }
+
+        // Distance Calculation
+        const R = 6371;
+        const dLat = (HER_LOC.lat - MY_LOC.lat) * Math.PI/180;
+        const dLon = (HER_LOC.lon - MY_LOC.lon) * Math.PI/180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(MY_LOC.lat*Math.PI/180) * Math.cos(HER_LOC.lat*Math.PI/180) * Math.sin(dLon/2)**2;
+        document.getElementById('distance').innerText = (2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+
+        // Meet Countdown
+        document.getElementById('meet-days').innerText = Math.ceil((MEET_DATE - now) / (1000*60*60*24));
+
+        // Load Daily Quiz
+        const day = now.getDate();
+        if (dailyData[day]) {
+            document.getElementById('question').innerText = dailyData[day].q;
+        } else {
+            document.getElementById('quiz-box').innerHTML = "<em>No quiz today! Spend time with me instead. ❤️</e";
+        }
+    }
+
+    function updateCountdown() {
+        const diff = VALENTINE_DATE - new Date();
+        if (diff <= 0) { initApp(); return; }
+        const d = Math.floor(diff / (1000*60*60*24));
+        const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+        const m = Math.floor((diff % (1000*60*60)) / (1000*60));
+        const s = Math.floor((diff % (1000*60)) / 1000);
+        document.getElementById('countdown').innerText = `${d}d ${h}h ${m}m ${s}s`;
+    }
+
+    function checkDailyAnswer() {
+        const day = new Date().getDate();
+        const val = document.getElementById('daily-answer').value.toLowerCase().trim();
+        if (dailyData[day] && val === dailyData[day].a) {
+            document.getElementById('reward-msg').innerText = dailyData[day].msg;
+            document.getElementById('reward-img').src = dailyData[day].img;
+            document.getElementById('reward').classList.remove('hidden');
+            document.getElementById('quiz-box').classList.add('hidden');
+        } else { alert("Do you think its easy, Not quite Papa! Try again! ❤️"); }
+    }
+
+    if (localStorage.getItem('val_unlocked') === 'true') {
+        document.getElementById('password-overlay').style.display = 'none';
+    }
+
+    setInterval(updateCountdown, 1000);
+    initApp();
+</script>
+</body>
+</html>
